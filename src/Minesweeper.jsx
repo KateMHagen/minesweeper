@@ -5,9 +5,9 @@ const numCols = 8
 const numMines = 10
 // Directions you can go to get to neighbouring cells
 let directions = [
-    [-1,-1], [-1,0], [-1,1],
-    [0,-1], [0,1],
-    [1,-1], [1,0], [1,1]
+    [-1,-1], [-1,0], [-1,1], // [up, left], [up, same], [up, right]
+    [0,-1], [0,1],           // [same, left], [same, right]
+    [1,-1], [1,0], [1,1]     // [down,left], [down, same], [down, right]
 ]
 
 function generateEmptyBoard() {
