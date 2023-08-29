@@ -2,12 +2,26 @@
 
 .board {
   display: flex;
-  background-color: red;
+
   width: 800px;
   height: 800px;
 }
+.hello {
+  background-color: blue;
+  width: 50px;
+  height: 50px;
+}
 
+.not-win {
+  display: none;
+}
 
+.win {
+  display: block;
+  width: 50px;
+  height: 50px;
+  background-color: purple;
+}
 
 .cell {
  
@@ -24,5 +38,7 @@
 .revealed {
   background-color: green;
 }
-
+.flagged {
+  background-color: green;
+}
 

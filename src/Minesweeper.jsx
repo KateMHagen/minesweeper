@@ -3,6 +3,9 @@ import { useState, useEffect } from "react"
 const numRows = 8
 const numCols = 8
 const numMines = 10
+const cellAmount = 64
+let cellUsedCount = 0
+let cellsFlagged = 0
 // Directions you can go to get to neighbouring cells
 let directions = [
     [-1,-1], [-1,0], [-1,1], // [up, left], [up, same], [up, right]
@@ -37,8 +40,8 @@ function placeMines(board) {
         
         if(!board[randRow][randCol].isMine) {
             board[randRow][randCol].isMine = true
+            minesPlaced++
         }
-        minesPlaced++
     }
 }
 
@@ -61,23 +64,16 @@ function countAdjacentMines(board, rowIndex, colIndex) {
     return count
 }
 
-function gameOver(){
-    console.log("Game over")
-}
+
 
 export default function Minesweeper() {
     const [board, setBoard] = useState(generateEmptyBoard())
+    const [isGameOver, setIsGameOver] = useState(false)
+    const [isGameWon, setIsGameWon] = useState(false)
     
-    // Create new board once when component mounts
+    // Create new game/board once when component mounts
     useEffect(() => {
-        const newBoard = generateEmptyBoard()
-        placeMines(newBoard)
-        for(let rows = 0; rows < numRows; rows++) {
-            for(let cols = 0; cols < numCols; cols++) {
-                newBoard[rows][cols].adjacentMines = countAdjacentMines(newBoard, rows, cols)
-            }
-        }
-        setBoard(newBoard)
+        newGame()
     }, [])
 
     function revealCell(board, rowIndex,colIndex) {
@@ -95,26 +91,100 @@ export default function Minesweeper() {
             gameOver()
             return board
         }
+
+       
             
         if(!cell.isRevealed) {
-            // If the cell has adjacent mines, only reveal that cell
-            if(cell.adjacentMines > 0) {
-                cell.isRevealed = true
-                return setBoard(copy)
-            } 
+            cellUsedCount++
+            if(!cell.isFlagged){
+                // If the cell has adjacent mines, only reveal that cell
+                if(cell.adjacentMines > 0) {
+                    cell.isRevealed = true
+                    return setBoard(copy)
+                } 
 
-            // If cell has no adjacent mines, reveal it and recursively reveal neighbours
-            cell.isRevealed = true
-            setBoard(copy)
-            for(const [x, y] of directions) {
+                // If cell has no adjacent mines, reveal it and recursively reveal neighbours
                 cell.isRevealed = true
-                console.log(copy)
-                revealCell(copy,rowIndex + x, colIndex + y)
+                setBoard(copy)
+                for(const [x, y] of directions) {
+                    cell.isRevealed = true
+                    revealCell(copy,rowIndex + x, colIndex + y)
+                }
             }
         }
     }
+
+    function gameOver() {
+        setIsGameOver(true)
+    }
+
+    function newGame() {
+        cellsFlagged = 0
+        cellUsedCount = 0
+        setIsGameOver(false)
+        setIsGameWon(false)
+        const newBoard = generateEmptyBoard()
+        placeMines(newBoard)
+        for(let rows = 0; rows < numRows; rows++) {
+            for(let cols = 0; cols < numCols; cols++) {
+                newBoard[rows][cols].adjacentMines = countAdjacentMines(newBoard, rows, cols)
+            }
+        }
+        setBoard(newBoard)
+    }
+
+    function flag(board, rowIndex, colIndex) {
+       
+        let copy = [...board]
+        let cell = copy[rowIndex][colIndex]
+        
+        if(cell.isFlagged) {
+            cell.isFlagged = false
+            cellUsedCount--
+            cellsFlagged--
+        } else {
+            cell.isFlagged = true
+            cellUsedCount++
+            cellsFlagged++
+        }
+        return setBoard(copy)
+    }
+
+    function displayCell(board, rowIndex, colIndex){
+        const cell = board[rowIndex][colIndex]
+        
+        if(cell.isMine){
+            return "💣"
+        }
+        if(cell.isRevealed){
+            if(cell.isMine){
+                return "💣"
+            } else {
+                return cell.adjacentMines
+            }
+        } else if (cell.isFlagged) {
+            return "⛳️"
+        }
+        
+        if(isGameOver){
+            if(cell.isMine){
+                return "💣"
+            }
+        } 
+    }
     
+    function gameWon() {
+        
+        // Game is won if all non-mine cells are revealed and all mines are flagged
+        // figure out where to call this function
+        console.log("you won!")
+        return setIsGameWon(true)
+ 
+    
+    }
+
     return (
+        <>
         <div className="board">
             {board.map((row, rowIndex) => (
                 <div key={rowIndex} className="row">
@@ -122,20 +192,31 @@ export default function Minesweeper() {
                         <div 
                             key={colIndex} 
                             // Reveal cell if clicked
-                            onClick={() => revealCell(board, rowIndex, colIndex)}
-                            className={`cell ${board[rowIndex][colIndex].isRevealed ? "revealed" : "notRevealed"}`}
+                            onClick={!isGameOver ? () => revealCell(board, rowIndex, colIndex) : gameOver}
+                            onContextMenu={(e) => {
+                                e.preventDefault()
+                                !isGameOver ? flag(board, rowIndex, colIndex) : gameOver()
+                            }}
+                            className={`
+                                cell 
+                                ${board[rowIndex][colIndex].isRevealed ? "revealed" : "notRevealed"} 
+                                ${board[rowIndex][colIndex].isFlagged ? "flagged" : "notRevealed"}
+                            `}
                             
-                            // Flag cell if right clicked
-                            //
-                            //
                         >
-                          
-                            {/* display cell content based on the state like how many adjacent mines, if its flagged, if a bomb*/}
-                            {board[rowIndex][colIndex].isRevealed ? (board[rowIndex][colIndex].isMine ? "💣" : "") : ""}
+                    
+                            {displayCell(board,rowIndex,colIndex, cellUsedCount)}
+                        
+                           
                         </div>
+
                     ))}
                 </div>
+                
             ))}
+            <button className="hello" onClick={newGame}>{isGameOver ? "sad face" : "happy face"}</button>
+            <div className={`${isGameWon ? "win" : "not-win"}`}>YOU WON!!</div>
         </div>
+        </>
     )
 }
