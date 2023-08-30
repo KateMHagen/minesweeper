@@ -3,7 +3,6 @@ import { useState, useEffect } from "react"
 const numRows = 8
 const numCols = 8
 const numMines = 10
-const cellAmount = 64
 let cellUsedCount = 0
 let cellsFlagged = 0
 // Directions you can go to get to neighbouring cells
@@ -64,8 +63,6 @@ function countAdjacentMines(board, rowIndex, colIndex) {
     return count
 }
 
-
-
 export default function Minesweeper() {
     const [board, setBoard] = useState(generateEmptyBoard())
     const [isGameOver, setIsGameOver] = useState(false)
@@ -84,18 +81,21 @@ export default function Minesweeper() {
 
         let copy = [...board]
         let cell = copy[rowIndex][colIndex]
-
+        
         if(cell.isMine) {
             cell.isRevealed = true
             setBoard(copy)
-            gameOver()
+            setIsGameOver(true)
             return board
         }
 
-       
-            
         if(!cell.isRevealed) {
             cellUsedCount++
+            // If cells used are 64 and cells flagged are 10, then user won game
+            if(cellUsedCount === 64 && cellsFlagged == 10) {
+                setIsGameWon(true)
+            }
+
             if(!cell.isFlagged){
                 // If the cell has adjacent mines, only reveal that cell
                 if(cell.adjacentMines > 0) {
@@ -106,6 +106,7 @@ export default function Minesweeper() {
                 // If cell has no adjacent mines, reveal it and recursively reveal neighbours
                 cell.isRevealed = true
                 setBoard(copy)
+                
                 for(const [x, y] of directions) {
                     cell.isRevealed = true
                     revealCell(copy,rowIndex + x, colIndex + y)
@@ -114,9 +115,7 @@ export default function Minesweeper() {
         }
     }
 
-    function gameOver() {
-        setIsGameOver(true)
-    }
+    
 
     function newGame() {
         cellsFlagged = 0
@@ -134,7 +133,6 @@ export default function Minesweeper() {
     }
 
     function flag(board, rowIndex, colIndex) {
-       
         let copy = [...board]
         let cell = copy[rowIndex][colIndex]
         
@@ -146,6 +144,10 @@ export default function Minesweeper() {
             cell.isFlagged = true
             cellUsedCount++
             cellsFlagged++
+            // If cells used are 64 and cells flagged are 10, then user won game
+            if(cellUsedCount === 64 && cellsFlagged == 10) {
+                setIsGameWon(true)
+            }
         }
         return setBoard(copy)
     }
@@ -153,12 +155,11 @@ export default function Minesweeper() {
     function displayCell(board, rowIndex, colIndex){
         const cell = board[rowIndex][colIndex]
         
-        if(cell.isMine){
-            return "💣"
-        }
         if(cell.isRevealed){
             if(cell.isMine){
                 return "💣"
+            } else if(cell.adjacentMines === 0) {
+                return ""
             } else {
                 return cell.adjacentMines
             }
@@ -173,50 +174,34 @@ export default function Minesweeper() {
         } 
     }
     
-    function gameWon() {
-        
-        // Game is won if all non-mine cells are revealed and all mines are flagged
-        // figure out where to call this function
-        console.log("you won!")
-        return setIsGameWon(true)
- 
-    
-    }
-
     return (
-        <>
-        <div className="board">
-            {board.map((row, rowIndex) => (
-                <div key={rowIndex} className="row">
-                    {row.map((col, colIndex) => (
-                        <div 
-                            key={colIndex} 
-                            // Reveal cell if clicked
-                            onClick={!isGameOver ? () => revealCell(board, rowIndex, colIndex) : gameOver}
-                            onContextMenu={(e) => {
-                                e.preventDefault()
-                                !isGameOver ? flag(board, rowIndex, colIndex) : gameOver()
-                            }}
-                            className={`
-                                cell 
-                                ${board[rowIndex][colIndex].isRevealed ? "revealed" : "notRevealed"} 
-                                ${board[rowIndex][colIndex].isFlagged ? "flagged" : "notRevealed"}
-                            `}
-                            
-                        >
-                    
-                            {displayCell(board,rowIndex,colIndex, cellUsedCount)}
-                        
-                           
-                        </div>
-
-                    ))}
-                </div>
-                
-            ))}
+        <div className="container">
             <button className="hello" onClick={newGame}>{isGameOver ? "sad face" : "happy face"}</button>
             <div className={`${isGameWon ? "win" : "not-win"}`}>YOU WON!!</div>
+            <div className="board">
+                {board.map((row, rowIndex) => (
+                    <div key={rowIndex} className="row">
+                        {row.map((col, colIndex) => (
+                            <div 
+                                key={colIndex} 
+                                // Reveal cell if clicked
+                                onClick={!isGameOver ? () => revealCell(board, rowIndex, colIndex) : () => setIsGameOver(true)}
+                                onContextMenu={(e) => {
+                                    e.preventDefault()
+                                    !isGameOver ? flag(board, rowIndex, colIndex) : setIsGameOver(true)
+                                }}
+                                className={`
+                                    cell 
+                                    ${board[rowIndex][colIndex].isRevealed ? "revealed" : "notRevealed"} 
+                                    ${board[rowIndex][colIndex].isFlagged ? "flagged" : "notRevealed"}
+                                `}
+                            >
+                                {displayCell(board,rowIndex,colIndex, cellUsedCount)}
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </div>  
         </div>
-        </>
     )
 }
