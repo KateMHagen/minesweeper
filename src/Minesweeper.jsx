@@ -12,57 +12,6 @@ let directions = [
     [1,-1], [1,0], [1,1]     // [down,left], [down, same], [down, right]
 ]
 
-function generateEmptyBoard() {
-    const board = []
-    for(let i = 0; i < numRows; i++) {
-        const row = []
-        for(let j = 0; j < numCols; j++) {
-            row.push({
-                isMine: false,
-                isRevealed: false,
-                isFlagged: false,
-                adjacentMines: 0,
-            })
-        }
-        board.push(row)
-    }
-    return board
-}
-
-function placeMines(board) {
-    // Randomly place mine on the board
-    let minesPlaced = 0
-    
-    while(minesPlaced < numMines) {
-        let randRow =  Math.floor(Math.random() * numRows);
-        let randCol =  Math.floor(Math.random() * numCols);
-        
-        if(!board[randRow][randCol].isMine) {
-            board[randRow][randCol].isMine = true
-            minesPlaced++
-        }
-    }
-}
-
-function countAdjacentMines(board, rowIndex, colIndex) {
-    // Keep a count of the adjacent mines
-    let count = 0
- 
-    for(const [x,y] of directions) {
-        let newRow = rowIndex + x
-        let newCol = colIndex + y
-        
-        // Check if neighbor cells are in bounds
-        if(newRow >= 0 && newRow < numRows && newCol >= 0 && newCol < numCols) {
-            // Check if neighbor cell isMine
-            if(board[newRow][newCol].isMine) {
-                count++
-            }
-        }
-    }
-    return count
-}
-
 export default function Minesweeper() {
     const [board, setBoard] = useState(generateEmptyBoard())
     const [isGameOver, setIsGameOver] = useState(false)
@@ -72,6 +21,72 @@ export default function Minesweeper() {
     useEffect(() => {
         newGame()
     }, [])
+
+    function generateEmptyBoard() {
+        const board = []
+        for(let i = 0; i < numRows; i++) {
+            const row = []
+            for(let j = 0; j < numCols; j++) {
+                row.push({
+                    isMine: false,
+                    isRevealed: false,
+                    isFlagged: false,
+                    adjacentMines: 0,
+                })
+            }
+            board.push(row)
+        }
+        return board
+    }
+
+    function newGame() {
+        cellsFlagged = 0
+        cellUsedCount = 0
+        setIsGameOver(false)
+        setIsGameWon(false)
+        const newBoard = generateEmptyBoard()
+        placeMines(newBoard)
+        for(let rows = 0; rows < numRows; rows++) {
+            for(let cols = 0; cols < numCols; cols++) {
+                newBoard[rows][cols].adjacentMines = countAdjacentMines(newBoard, rows, cols)
+            }
+        }
+        setBoard(newBoard)
+    }
+
+    function placeMines(board) {
+        // Randomly place mine on the board
+        let minesPlaced = 0
+        
+        while(minesPlaced < numMines) {
+            let randRow =  Math.floor(Math.random() * numRows);
+            let randCol =  Math.floor(Math.random() * numCols);
+            
+            if(!board[randRow][randCol].isMine) {
+                board[randRow][randCol].isMine = true
+                minesPlaced++
+            }
+        }
+    }
+
+    function countAdjacentMines(board, rowIndex, colIndex) {
+        // Keep a count of the adjacent mines
+        let count = 0
+    
+        for(const [x,y] of directions) {
+            let newRow = rowIndex + x
+            let newCol = colIndex + y
+            
+            // Check if neighbor cells are in bounds
+            if(newRow >= 0 && newRow < numRows && newCol >= 0 && newCol < numCols) {
+                // Check if neighbor cell isMine
+                if(board[newRow][newCol].isMine) {
+                    count++
+                }
+            }
+        }
+        return count
+    }
 
     function revealCell(board, rowIndex,colIndex) {
         // Check if row or col index is out bounds
@@ -115,23 +130,6 @@ export default function Minesweeper() {
         }
     }
 
-    
-
-    function newGame() {
-        cellsFlagged = 0
-        cellUsedCount = 0
-        setIsGameOver(false)
-        setIsGameWon(false)
-        const newBoard = generateEmptyBoard()
-        placeMines(newBoard)
-        for(let rows = 0; rows < numRows; rows++) {
-            for(let cols = 0; cols < numCols; cols++) {
-                newBoard[rows][cols].adjacentMines = countAdjacentMines(newBoard, rows, cols)
-            }
-        }
-        setBoard(newBoard)
-    }
-
     function flag(board, rowIndex, colIndex) {
         let copy = [...board]
         let cell = copy[rowIndex][colIndex]
@@ -173,7 +171,7 @@ export default function Minesweeper() {
             }
         } 
     }
-    
+
     return (
         <div className="container">
             <button className="hello" onClick={newGame}>{isGameOver ? "sad face" : "happy face"}</button>
